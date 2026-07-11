@@ -11,11 +11,7 @@ langchain-core
 langchain-text-splitters
 
 chromadb
-
 sentence-transformers
-
-torch==2.7.1
---extra-index-url https://download.pytorch.org/whl/cpu
 
 pydantic
 huggingface_hub
