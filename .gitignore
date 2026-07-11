@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.env
+env/
+.env
+
+# Model cache - downloaded automatically on first run
+backend/model_cache/
+
+# Chroma vector stores - regenerated per video
+backend/vector_stores/
+
+# Node
+frontend/node_modules/
+frontend/dist/
