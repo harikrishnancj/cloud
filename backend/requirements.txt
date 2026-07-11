@@ -2,13 +2,20 @@ fastapi
 uvicorn
 youtube_transcript_api
 python-dotenv
+
 langchain
 langchain-community
 langchain-huggingface
 langchain-chroma
 langchain-core
 langchain-text-splitters
+
 chromadb
+
 sentence-transformers
+
+torch==2.7.1
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 pydantic
 huggingface_hub
