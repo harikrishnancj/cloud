@@ -1,11 +1,12 @@
 import os
 import urllib.parse as urlparse
+from dotenv import load_dotenv
+
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from huggingface_hub import InferenceClient
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -16,38 +17,44 @@ current_video_id = None
 vector_store = None
 embedding_model = None
 
+
 # -----------------------------
-# Lazy load embedding model
+# Lazy load Gemini Embeddings
 # -----------------------------
 def get_embedding_model():
     global embedding_model
 
     if embedding_model is None:
-        print("Loading embedding model...")
-        embedding_model = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        print("Loading Gemini Embedding Client...")
+
+        embedding_model = GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-001",
+            google_api_key=os.getenv("GEMINI_API_KEY"),
         )
-        print("Embedding model loaded.")
+
+        print("Gemini Embedding Client Ready.")
 
     return embedding_model
 
+
 # -----------------------------
-# Hugging Face client
+# Hugging Face LLM
 # -----------------------------
 hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACEHUB_API_TOKEN")
 
 chat_client = InferenceClient(
     provider="featherless-ai",
     model="Qwen/Qwen2.5-7B-Instruct",
-    token=hf_token
+    token=hf_token,
 )
 
 SYSTEM_PROMPT = """
 You are a helpful assistant.
 
-Answer ONLY from the provided transcript context.
+Answer ONLY using the provided transcript context.
 
-If the context is insufficient, simply say you don't know.
+If the answer cannot be found in the context, simply say:
+"I don't know based on the transcript."
 """
 
 
@@ -55,18 +62,16 @@ def format_docs(retrieved_docs):
     return "\n\n".join(doc.page_content for doc in retrieved_docs)
 
 
-def _extract_video_id(url: str) -> str:
-    """Extract YouTube video ID."""
-
+def _extract_video_id(url: str) ->str:
     if "youtu.be" in url:
         return url.split("/")[-1].split("?")[0]
 
     parsed_url = urlparse.urlparse(url)
 
     if parsed_url.hostname in ("youtube.com", "www.youtube.com"):
-        query_params = urlparse.parse_qs(parsed_url.query)
-        if "v" in query_params:
-            return query_params["v"][0]
+        query = urlparse.parse_qs(parsed_url.query)
+        if "v" in query:
+            return query["v"][0]
 
     if "v=" in url:
         return url.split("v=")[-1].split("&")[0]
@@ -81,18 +86,16 @@ def process_video(url: str):
     try:
         video_id = _extract_video_id(url)
 
-        # Already processed
         if current_video_id == video_id and vector_store is not None:
             return {
                 "status": "success",
-                "message": "Video already loaded",
+                "message": "Video already processed.",
                 "video_id": video_id,
             }
 
-        # Fetch transcript
         transcript = YouTubeTranscriptApi().fetch(
             video_id,
-            languages=["en"]
+            languages=["en"],
         )
 
         transcript_text = " ".join(
@@ -106,7 +109,6 @@ def process_video(url: str):
 
         docs = splitter.split_text(transcript_text)
 
-        # Load embedding model only when needed
         embeddings = get_embedding_model()
 
         vector_store = Chroma.from_texts(
@@ -118,7 +120,7 @@ def process_video(url: str):
 
         return {
             "status": "success",
-            "message": "Video processed successfully",
+            "message": "Video processed successfully.",
             "video_id": video_id,
         }
 
@@ -137,7 +139,7 @@ def ask_question(question: str):
 
     retriever = vector_store.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 4},
+        search_kwargs={"k":4},
     )
 
     retrieved_docs = retriever.invoke(question)
@@ -147,16 +149,16 @@ def ask_question(question: str):
     response = chat_client.chat_completion(
         messages=[
             {
-                "role": "system",
-                "content": SYSTEM_PROMPT,
+                "role":"system",
+                "content":SYSTEM_PROMPT,
             },
             {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion: {question}",
+                "role":"user",
+                "content":f"Context:\n{context}\n\nQuestion: {question}",
             },
         ],
-        max_tokens=512,
         temperature=0.1,
+        max_tokens=512,
     )
 
     return response.choices[0].message.content

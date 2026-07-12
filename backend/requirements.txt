@@ -15,3 +15,5 @@ sentence-transformers
 
 pydantic
 huggingface_hub
+langchain-google-genai
+google-generativeai
