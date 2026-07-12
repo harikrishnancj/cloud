@@ -12,10 +12,17 @@ from services.rag_service import process_video, ask_question
 app = FastAPI(title="YouTube RAG API")
 
 # Configure CORS for frontend access
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "https://cloud-rho-nine.vercel.app",
+    "http://localhost:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://cloud-rho-nine.vercel.app/"], # Allow all for development. Restrict in production.
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
