@@ -16,7 +16,7 @@ function App() {
     setProcessStatus(null)
     setChatHistory([])
     try {
-      const response = await fetch('http://localhost:8000/api/process-video', {
+      const response = await fetch('https://agile-sparkle-production-d50b.up.railway.app/api/process-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
@@ -44,7 +44,7 @@ function App() {
     setIsAsking(true)
     
     try {
-      const response = await fetch('http://localhost:8000/api/ask', {
+      const response = await fetch('https://agile-sparkle-production-d50b.up.railway.app/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question })
