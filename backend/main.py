@@ -14,7 +14,7 @@ app = FastAPI(title="YouTube RAG API")
 # Configure CORS for frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for development. Restrict in production.
+    allow_origins=["https://cloud-rho-nine.vercel.app/"], # Allow all for development. Restrict in production.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
